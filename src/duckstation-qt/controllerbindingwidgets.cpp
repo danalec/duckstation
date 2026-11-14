@@ -663,6 +663,17 @@ void ControllerBindingWidget::bindBindingWidgets(QWidget* parent)
 
 //////////////////////////////////////////////////////////////////////////
 
+/// Returns true if the binding can be activated by a macro.
+/// Motors and LEDs are outputs, pointers are query-only and devices are special-purpose, and
+/// none of them can be triggered by a macro.
+static bool IsMacroBindable(const Controller::ControllerBindingInfo& bi)
+{
+  return bi.type == InputBindingInfo::Type::Button || bi.type == InputBindingInfo::Type::Axis ||
+         bi.type == InputBindingInfo::Type::HalfAxis;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 ControllerMacroWidget::ControllerMacroWidget(ControllerBindingWidget* parent) : QSplitter(parent)
 {
   setChildrenCollapsible(false);
@@ -735,7 +746,9 @@ ControllerMacroEditWidget::ControllerMacroEditWidget(ControllerMacroWidget* pare
     {
       if (button == bi.name)
       {
-        m_binds.push_back(&bi);
+        // Ignore binds which cannot be triggered by a macro, e.g. an LED.
+        if (IsMacroBindable(bi))
+          m_binds.push_back(&bi);
         break;
       }
     }
@@ -744,7 +757,7 @@ ControllerMacroEditWidget::ControllerMacroEditWidget(ControllerMacroWidget* pare
   // populate list view
   for (const Controller::ControllerBindingInfo& bi : cinfo->bindings)
   {
-    if (bi.type == InputBindingInfo::Type::Motor)
+    if (!IsMacroBindable(bi))
       continue;
 
     QListWidgetItem* item = new QListWidgetItem();
@@ -789,7 +802,7 @@ QString ControllerMacroEditWidget::getSummary() const
   for (const Controller::ControllerBindingInfo* bi : m_binds)
   {
     if (!str.empty())
-      str.append('/');
+      str.append(' ');
     str.append(m_bwidget->getControllerInfo()->GetBindingDisplayName(*bi));
   }
   return str.empty() ? tr("Not Configured") : QString::fromUtf8(str.c_str(), static_cast<int>(str.length()));
@@ -853,7 +866,7 @@ void ControllerMacroEditWidget::updateBinds()
   u32 bind_index = 0;
   for (const Controller::ControllerBindingInfo& bi : cinfo->bindings)
   {
-    if (bi.type == InputBindingInfo::Type::Motor)
+    if (!IsMacroBindable(bi))
       continue;
 
     const QListWidgetItem* item = m_ui.bindList->item(static_cast<int>(bind_index));
