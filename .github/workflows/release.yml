@@ -1,0 +1,66 @@
+name: 📦 Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_channel:
+        description: "Release channel used by the updater (preview/latest). Leave empty to derive it from the branch."
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: 💻 Windows
+    uses: "./.github/workflows/windows-build.yml"
+    with:
+      release_channel: ${{ inputs.release_channel }}
+  linux-appimage:
+    name: 🐧 Linux AppImage
+    uses: "./.github/workflows/linux-appimage-build.yml"
+    with:
+      release_channel: ${{ inputs.release_channel }}
+  linux-cross-appimage:
+    name: 🐧 Linux Cross-Compiled AppImage
+    uses: "./.github/workflows/linux-cross-appimage-build.yml"
+    with:
+      release_channel: ${{ inputs.release_channel }}
+  macos:
+    name: 🍎 MacOS
+    uses: "./.github/workflows/macos-build.yml"
+    with:
+      release_channel: ${{ inputs.release_channel }}
+
+  publish:
+    name: 📤 Publish Release
+    needs: [windows, linux-appimage, linux-cross-appimage, macos]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: ./artifacts/
+          merge-multiple: true
+          skip-decompress: true
+
+      - name: Display Downloaded Artifacts
+        run: find ./artifacts/ -type f | sort
+
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists, uploading assets."
+            gh release upload "$TAG" ./artifacts/* --clobber
+          else
+            echo "Creating release $TAG."
+            gh release create "$TAG" --title "$TAG" --generate-notes ./artifacts/*
+          fi

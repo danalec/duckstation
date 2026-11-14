@@ -2,7 +2,19 @@ name: 🐧 Linux Cross-Compiled AppImage
 
 on:
   workflow_call:
+    inputs:
+      release_channel:
+        description: "Release channel used by the updater (preview/latest). If empty, it is derived from the branch."
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
+    inputs:
+      release_channel:
+        description: "Release channel used by the updater (preview/latest). If empty, it is derived from the branch."
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -81,6 +93,15 @@ jobs:
         echo '#pragma once' > src/scmversion/tag.h
         echo '#define UPDATER_RELEASE_CHANNEL "latest"' >> src/scmversion/tag.h
         echo '#define UPDATER_RELEASE_IS_OFFICIAL 1' >> src/scmversion/tag.h
+
+    - name: Tag as Release Channel
+      if: inputs.release_channel != ''
+      run: |
+        echo '#pragma once' > src/scmversion/tag.h
+        echo "#define UPDATER_RELEASE_CHANNEL \"$RELEASE_CHANNEL\"" >> src/scmversion/tag.h
+        echo '#define UPDATER_RELEASE_IS_OFFICIAL 1' >> src/scmversion/tag.h
+      env:
+        RELEASE_CHANNEL: ${{ inputs.release_channel }}
 
     - name: Generate CMake
       shell: bash
