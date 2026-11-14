@@ -20,22 +20,22 @@ jobs:
     name: 💻 Windows
     uses: "./.github/workflows/windows-build.yml"
     with:
-      release_channel: ${{ inputs.release_channel }}
+      release_channel: ${{ inputs.release_channel || 'preview' }}
   linux-appimage:
     name: 🐧 Linux AppImage
     uses: "./.github/workflows/linux-appimage-build.yml"
     with:
-      release_channel: ${{ inputs.release_channel }}
+      release_channel: ${{ inputs.release_channel || 'preview' }}
   linux-cross-appimage:
     name: 🐧 Linux Cross-Compiled AppImage
     uses: "./.github/workflows/linux-cross-appimage-build.yml"
     with:
-      release_channel: ${{ inputs.release_channel }}
+      release_channel: ${{ inputs.release_channel || 'preview' }}
   macos:
     name: 🍎 MacOS
     uses: "./.github/workflows/macos-build.yml"
     with:
-      release_channel: ${{ inputs.release_channel }}
+      release_channel: ${{ inputs.release_channel || 'preview' }}
 
   publish:
     name: 📤 Publish Release
