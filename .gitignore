@@ -49,3 +49,6 @@ __pycache__
 
 # other repos
 /android
+
+# local agent instructions
+AGENTS.md
