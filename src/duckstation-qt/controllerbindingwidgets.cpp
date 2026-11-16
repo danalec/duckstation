@@ -663,6 +663,12 @@ void ControllerBindingWidget::bindBindingWidgets(QWidget* parent)
 
 //////////////////////////////////////////////////////////////////////////
 
+static bool IsMacroBindable(const Controller::ControllerBindingInfo& bi)
+{
+  return bi.type == InputBindingInfo::Type::Button || bi.type == InputBindingInfo::Type::Axis ||
+         bi.type == InputBindingInfo::Type::HalfAxis;
+}
+
 ControllerMacroWidget::ControllerMacroWidget(ControllerBindingWidget* parent) : QSplitter(parent)
 {
   setChildrenCollapsible(false);
@@ -735,7 +741,8 @@ ControllerMacroEditWidget::ControllerMacroEditWidget(ControllerMacroWidget* pare
     {
       if (button == bi.name)
       {
-        m_binds.push_back(&bi);
+        if (IsMacroBindable(bi))
+          m_binds.push_back(&bi);
         break;
       }
     }
@@ -744,7 +751,7 @@ ControllerMacroEditWidget::ControllerMacroEditWidget(ControllerMacroWidget* pare
   // populate list view
   for (const Controller::ControllerBindingInfo& bi : cinfo->bindings)
   {
-    if (bi.type == InputBindingInfo::Type::Motor)
+    if (!IsMacroBindable(bi))
       continue;
 
     QListWidgetItem* item = new QListWidgetItem();
@@ -852,7 +859,7 @@ void ControllerMacroEditWidget::updateBinds()
   u32 bind_index = 0;
   for (const Controller::ControllerBindingInfo& bi : cinfo->bindings)
   {
-    if (bi.type == InputBindingInfo::Type::Motor)
+    if (!IsMacroBindable(bi))
       continue;
 
     const QListWidgetItem* item = m_ui.bindList->item(static_cast<int>(bind_index));
