@@ -796,8 +796,8 @@ QString ControllerMacroEditWidget::getSummary() const
   for (const Controller::ControllerBindingInfo* bi : m_binds)
   {
     if (!str.empty())
-      str.append('/');
-    str.append(bi->name);
+      str.append(' ');
+    str.append(m_bwidget->getControllerInfo()->GetBindingDisplayName(*bi));
   }
   return str.empty() ? tr("Not Configured") : QString::fromUtf8(str.c_str(), static_cast<int>(str.length()));
 }
@@ -855,7 +855,7 @@ void ControllerMacroEditWidget::updateBinds()
   const Controller::ControllerInfo* cinfo = m_bwidget->getControllerInfo();
   DebugAssert(cinfo);
 
-  std::vector<const Controller::ControllerBindingInfo*> new_binds;
+  bool changed = false;
   u32 bind_index = 0;
   for (const Controller::ControllerBindingInfo& bi : cinfo->bindings)
   {
@@ -871,13 +871,24 @@ void ControllerMacroEditWidget::updateBinds()
       continue;
     }
 
+    const auto it = std::ranges::find(m_binds, &bi);
     if (item->checkState() == Qt::Checked)
-      new_binds.push_back(&bi);
+    {
+      if (it == m_binds.end())
+      {
+        m_binds.push_back(&bi);
+        changed = true;
+      }
+    }
+    else if (it != m_binds.end())
+    {
+      m_binds.erase(it);
+      changed = true;
+    }
   }
-  if (m_binds == new_binds)
-    return;
 
-  m_binds = std::move(new_binds);
+  if (!changed)
+    return;
 
   std::string binds_string;
   for (const Controller::ControllerBindingInfo* bi : m_binds)
